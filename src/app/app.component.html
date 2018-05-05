@@ -1,0 +1,83 @@
+  <div class="ui fixed inverted borderless pointing menu">
+    <div class="ui container">
+      <a href="#" class="header item">
+        <img class="logo" src="assets/A.png">
+        &nbsp;P2P Collaboration BC
+      </a>
+      <a href="#" class="item">Home</a>
+      <div class="ui simple dropdown item">
+        Dropdown <i class="dropdown icon"></i>
+        <div class="menu">
+          <a class="item" href="#">Link Item</a>
+          <a class="item" href="#">Link Item</a>
+          <div class="divider"></div>
+          <div class="header">Header Item</div>
+          <div class="item">
+            <i class="dropdown icon"></i>
+            Sub Menu
+            <div class="menu">
+              <a class="item" href="#">Link Item</a>
+              <a class="item" href="#">Link Item</a>
+            </div>
+          </div>
+          <a class="item" href="#">Link Item</a>
+        </div>
+      </div>
+    </div>
+    	<div class="right menu">
+ 	  <div class="item">Logged as ...</div>
+      	  <div class="item"> <a class="ui button" (click)="login()"><small>Log in</small></a> </div>
+      	  <div class="item"> <a class="ui button" (click)="logout()"><small>Log out</small></a> </div>
+    	</div>
+  </div>
+
+<div style="margin-top: 7em;">
+
+<h4>Default account on the node: {{defaultAccount}}</h4>
+
+<!--
+<table class="ui small celled table">
+  <tbody>
+   <tr *ngFor="let account of accounts$ | async; let i = index">
+    <td>{{account}}</td>
+   </tr>
+  </tbody>
+</table>
+-->
+
+<h3>PO in the Blockchain:</h3>
+
+<table class="ui small celled table">
+  <thead>
+  <tr><th>Index</th>
+    <th>PO Id</th>
+    <th>BCP</th>
+    <th>SCP</th>
+    <th>PO Status</th>
+    <th>Qty</th>
+    <th>Date</th>
+    <th>Actions</th>
+  </tr>
+  </thead>
+  <tbody>
+    <!--
+   <tr *ngFor="let po of supplierPOs$ | async; let i = index">
+    <td>{{i}}</td><td>{{po.poID}}</td> <td>{{po.BCP}}</td><td>{{po.SCP}}</td><td>{{po.status}}</td>
+    <td>{{po.reqQty}}</td><td>{{po.reqDate}}</td>
+    <td> 
+      <button (click)="supplierAcceptPO(po.poID)" class="tiny positive ui button">Accept</button> 
+      <button (click)="supplierRejectPO(po.poID)" class="tiny negative ui button">Reject</button>
+    </td>
+   </tr>
+   -->
+  </tbody>
+</table>
+
+<h4>Current Block Number: {{blockNumber}}</h4>
+
+<h4>Last Blockchain response:</h4>
+{{blockchainResponse | async}}
+
+</div>
+
+
