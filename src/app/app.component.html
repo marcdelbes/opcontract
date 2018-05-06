@@ -33,8 +33,14 @@
 
 <div style="margin-top: 7em;">
 
-<h4>Default account on the node: {{defaultAccount}}</h4>
-
+<div class="ui inverted violet segment">
+<h3>Node information</h3>
+Default account on the node: <i>{{defaultAccount}}</i><br>
+Current Block Number: <i>{{blockNumber}}</i>
+<!--
+<h4>Last Blockchain response:</h4>
+{{blockchainResponse | async}}
+-->
 <!--
 <table class="ui small celled table">
   <tbody>
@@ -44,6 +50,8 @@
   </tbody>
 </table>
 -->
+</div>
+
 
 <h3>PO in the Blockchain:</h3>
 
@@ -72,11 +80,6 @@
    -->
   </tbody>
 </table>
-
-<h4>Current Block Number: {{blockNumber}}</h4>
-
-<h4>Last Blockchain response:</h4>
-{{blockchainResponse | async}}
 
 </div>
 
