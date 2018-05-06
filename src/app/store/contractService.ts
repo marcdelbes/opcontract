@@ -19,8 +19,11 @@ export class ContractService {
 
   constructor() {
     this._web3 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:25000"));
-    //this._tokenContract = this._web3.eth.contract(tokenAbi).at(this._tokenContractAddress);
-    console.log("web3 version " + this._web3.version.api + " " + this._web3.version.node);
+    if(!this._web3.isConnected()) {
+	alert("cannot connect to node via web3js !");
+	} else {
+    	console.log("web3 version " + this._web3.version.api + " " + this._web3.version.node);
+    }
   }
 
   public getAccount( callback ): Promise<string> {
