@@ -5,7 +5,7 @@ import 'rxjs/add/operator/map';
 
 import { PO } from './store/po.model';
 import { poService } from './store/po.service';
-import { ContractService } from './store/contractService';
+import { nodeService } from './store/nodeService';
 
 @Component({
   selector: 'app-root',
@@ -19,27 +19,24 @@ export class AppComponent implements OnInit {
 
   customerPOs$: Observable<PO[]>;
   supplierPOs$: Observable<PO[]>;
-  accounts$: Observable<string[]>;
   blockchainResponse: Observable<string>;
 
   blockNumber: string = 'retrieving...';
-  defaultAccount: string = 'retrieving...';
-  //defaultAccount: Promise<string>;
+  defaultAccount: string = 'none';
+  accounts: string[] = [];
   
-  constructor(private poService : poService, private contractService : ContractService ) { 
+  constructor(private poService : poService, private nodeService : nodeService ) { 
 
     //this.customerPOs$ = this.poService.getPOs().map( p => p.filter( po => po.BCP == 'Airbus' ) );
     //this.supplierPOs$ = this.poService.getPOs();
-    //this.accounts$ = this.poService.getAccounts();
     //this.blockchainResponse = this.poService.getMessage();
     //this.poService.loadAllPOs();
-    //this.poService.loadAccounts();
-    //this.poService.loadBlockNumber();
 
-    this.contractService.getBlockNumber( res => { this.blockNumber = res; });
-
-    //this.defaultAccount = this.contractService.getAccount();
-    this.contractService.getAccount( res => { this.defaultAccount = res; });
+    this.nodeService.getBlockNumber( res => { this.blockNumber = res; });
+    this.nodeService.getAccounts( res => { 
+	this.accounts = res; 
+	if (res && res.length != 0) this.defaultAccount = res[0]; 
+	});
 
   }
 

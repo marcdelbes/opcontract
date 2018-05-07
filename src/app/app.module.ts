@@ -9,7 +9,7 @@ import { StoreModule } 		from '@ngrx/store';
 import { AppComponent } from './app.component';
 
 import { poService, reducer } from './store/po.service';
-import { ContractService } from './store/contractService';
+import { nodeService } from './store/nodeService';
 
 @NgModule({
   declarations: [
@@ -22,7 +22,7 @@ import { ContractService } from './store/contractService';
     HttpModule,
     StoreModule.forRoot(reducer)
   ],
-  providers: [poService,ContractService],
+  providers: [poService,nodeService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

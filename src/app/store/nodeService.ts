@@ -9,11 +9,14 @@ declare let window: any;
 let tokenAbi = '{}';
 
 @Injectable()
-export class ContractService {
+export class nodeService {
 
-  private _account: string = null;
-  private _web3: any;
+  _web3: any;
 
+  // all accounts on the node
+  private _accounts: string[] = null;
+
+  // fixme: unused yet
   private _tokenContract: any;
   private _tokenContractAddress: string = "0xbc84f3bf7dd607a37f9e5848a6333e6c188d926c"; // FIXME
 
@@ -26,20 +29,23 @@ export class ContractService {
     }
   }
 
-  public getAccount( callback ): Promise<string> {
-  if (this._account == null) {
+  // retrieve all accounts on the node, including the 1st one considered as default, and 
+  // populate the _web3 object with this default account for all further operations
+
+  public getAccounts( callback ): Promise<string> {
+  if (this._accounts == null) {
      return new Promise<string>((resolve, reject) => {
       this._web3.eth.getAccounts((err, accs) => {
         if (err != null) { console.log('There was an error fetching your accounts.'); reject(); }
-        if (accs.length === 0) { console.log( 'Couldn\'t get any accounts! Make sure your Ethereum client is configured correctly.'); reject(); }
-	this._account = accs[0];
-        resolve( callback ( this._account ));
+        if (accs.length === 0) { console.log( 'Couldn\'t get any accounts! Make sure your client is configured correctly.'); reject(); }
+	this._accounts = accs;
+    	this._web3.eth.defaultAccount = this._accounts[0];
+    	console.log("default account = " + this._accounts[0].toString() );
+        resolve( callback ( this._accounts ));
       })
     });
-    //this._web3.eth.defaultAccount = this._account;
-    //alert("default account = " + this._account.toString() );
   }
-  return Promise.resolve( callback (this._account) );
+  return Promise.resolve( callback (this._accounts) );
  }
 
   public getBlockNumber( callback ): Promise<string> {
