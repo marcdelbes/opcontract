@@ -3,31 +3,43 @@ var http    = require('http');
 var bodyParser = require("body-parser");
 var app = express();
 
+//
+// connect to a specific geth node via web3
+//
 var Web3 = require('web3');
 var web3;
 
 if (typeof web3 !== 'undefined') { web3 = new Web3(web3.currentProvider); } 
 else { web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:22000")); }
 
-console.log("web3 version = " + web3.version.api);
+console.log("web3 version = " + web3.version.api + ", node = " + web3.version.node);
 
-// Create link to Angular build directory
+//
+// Serve all Angular build directory directly as static
+//
 var distDir = __dirname + "/dist/";
 app.use(bodyParser.json());
 app.use(express.static(distDir));
 
-// Initialize the app.
-var server = app.listen(process.env.PORT || 8080, function () {
+//
+// Initialize the app
+//
+var server = app.listen(process.env.PORT || 4200, function () {
     var port = server.address().port;
     console.log("App now running on port", port);
   });
 
+//
 // Generic error handler used by all endpoints.
+//
 function handleError(res, reason, message, code) {
   console.log("ERROR: " + reason);
   res.status(code || 500).json({"error": message});
 };
 
+//
+// REST API below
+//
 app.get("/api/accounts", function(req,res) {
     res.send(JSON.stringify(web3.eth.accounts));
   }

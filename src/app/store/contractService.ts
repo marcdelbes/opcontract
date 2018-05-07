@@ -18,7 +18,7 @@ export class ContractService {
   private _tokenContractAddress: string = "0xbc84f3bf7dd607a37f9e5848a6333e6c188d926c"; // FIXME
 
   constructor() {
-    this._web3 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:25000"));
+    this._web3 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:8080"));
     if(!this._web3.isConnected()) {
 	alert("cannot connect to node via web3js !");
 	} else {
