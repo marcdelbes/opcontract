@@ -18,7 +18,7 @@ export class nodeService {
 
   // fixme: unused yet
   private _tokenContract: any;
-  private _tokenContractAddress: string = "0xbc84f3bf7dd607a37f9e5848a6333e6c188d926c"; // FIXME
+  private _tokenContractAddress: string = "0x1932c48b2bf8102ba33b4a6b545c32236e342f34"; // ownerClaims contract 
 
   constructor() {
     this._web3 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:8080"));
@@ -52,6 +52,12 @@ export class nodeService {
 	return this._web3.eth.getBlockNumber(function(error,result) {
 	if (!error) callback(result.toString()); else console.error(error);});
   }
+
+  public getBlockDetail( number, callback ): Promise<string> {
+	return this._web3.eth.getBlock(number, false, function(error,result) {
+	if (!error) callback(JSON.stringify(result,null,2)); else console.error(error);});
+  }
+
 
 }
   

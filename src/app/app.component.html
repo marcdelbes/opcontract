@@ -38,6 +38,17 @@
 Default account on the node: <i>{{defaultAccount}}</i><br>
 Total number of accounts: <i>{{accounts.length}}</i><br>
 Current Block Number: <i>{{blockNumber}}</i>
+<sui-accordion [closeOthers]="false">
+    <sui-accordion-panel [isOpen]="false">
+        <div title>
+            <i class="dropdown icon"></i>
+            Current Block details 
+        </div>
+        <div content>
+            <pre>{{blockDetail}}</pre>
+        </div>
+    </sui-accordion-panel>
+</sui-accordion>
 <!--
 <h4>Last Blockchain response:</h4>
 {{blockchainResponse | async}}

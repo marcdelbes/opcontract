@@ -1,5 +1,5 @@
 {
-  "name": "angular-ethereum-blockchain",
+  "name": "p2p-collaboration",
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
@@ -26,6 +26,8 @@
     "core-js": "^2.4.1",
     "ethereumjs-testrpc": "^6.0.3",
     "font-awesome": "^4.7.0",
+    "ng2-semantic-ui": "^0.9.7",
+    "ngrx-core": "^1.2.2",
     "rxjs": "^5.5.2",
     "semantic-ui": "^2.3.1",
     "solc": "^0.4.19",

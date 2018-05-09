@@ -40,14 +40,24 @@ function handleError(res, reason, message, code) {
 //
 // REST API below
 //
+
+// GET /api/accounts		retrieve all accounts on the node
 app.get("/api/accounts", function(req,res) {
     res.send(JSON.stringify(web3.eth.accounts));
   }
 );
 
+// GET /api/blockNumber		retrieve the current block number
 app.get("/api/blockNumber", function(req,res) {
     res.send(JSON.stringify(web3.eth.blockNumber));
   }
 );
 
+// POST /api/login		send a signed raw transaction as authentication method for the user
+app.post("/api/login", function(req,res) {
+    var serializedTx = req.body.toString('hex');
+    console.log("received login attempt: " + serializedTx );
+    res.send(JSON.stringify( web3.eth.sendRawTransaction('0x' + serializedTx)));
+  }
+);
 
