@@ -1,0 +1,9 @@
+{
+    "env": {
+    "name": "DEV"
+     },
+    "contracts": {
+    "claimContractAddr": "0xe273fd8a6deb07c4bd7226e0ba05724dcb4bd38a",
+    "loginContractAddr": "0x8f9098360e8144c68ad87feceab72126115a78fe"
+    }
+}

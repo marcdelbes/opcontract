@@ -1,20 +1,27 @@
 import { Injectable } from '@angular/core';
 import * as W3 from 'web3';
 
+import { AppConfig } from '../app.config';
+
 const Web3 = require('web3'); 		// tslint:disable-line
 let Tx = require('ethereumjs-tx');	// required to sign transactions
-	import {Buffer} from 'buffer';		// required during tx signature
+import {Buffer} from 'buffer';		// required during tx signature
 
-	declare let require: any;
+declare let require: any;
 
-	@Injectable()
-	export class nodeService {
+@Injectable()
+export class nodeService {
 
   web3: any;
 
   isSigned = false;
   txHash = '';
 
+  _loginContractAddr = AppConfig.settings.contracts.loginContractAddr;
+  _loginContractAbi = require('../contracts/Login.json'); 
+
+  _claimContractAddr = AppConfig.settings.contracts.claimContractAddr; 
+  _claimContractAbi = require('../contracts/ownerclaimsContract.json');
 
   // all accounts on the node
   private _accounts: string[] = null;
@@ -23,22 +30,21 @@ let Tx = require('ethereumjs-tx');	// required to sign transactions
   constructor() {
 
     this.web3 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:8080"));
+    console.log("login contract addr: " + this._loginContractAddr);
+    console.log("claim contract addr: " + this._claimContractAddr);
 
   }
 
   // Basic test: Send a signed transaction and check that contract method has been executed by writing a new string
   public basicTest( s : string ) {
 
-    // test contract
-    let claimTestAbi = require('../contracts/ownerclaimsContract.json');
-    let claimTestAddress = "0xe273fd8a6deb07c4bd7226e0ba05724dcb4bd38a"; 
 
     var acc = this._accounts[0]; 
     console.log("using account '" + acc + "'");
 
     // retrieve contract
-    var contract = this.web3.eth.contract(claimTestAbi).at(claimTestAddress); 
-    console.log("testing contract at address '" + claimTestAddress + "'");
+    var contract = this.web3.eth.contract(this._claimContractAbi).at(this._claimContractAddr); 
+    console.log("testing contract at address '" + this._claimContractAddr + "'");
 
     // simple contract method call, to test the web3js api 
     contract.getDefaultClaim.call( acc , { from: acc }, function(err, receipt){console.log("1st getDefaultClaim call, result = '" + receipt + "'")}); 
@@ -52,7 +58,7 @@ let Tx = require('ethereumjs-tx');	// required to sign transactions
          from : acc,
  	 gas: 1000000,
 	 value: 0,
-	 to: claimTestAddress,
+	 to: this._claimContractAddr,
 	 nonce: this.web3.toHex(this.web3.eth.getTransactionCount(acc)),
 	} 
 

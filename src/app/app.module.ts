@@ -12,6 +12,13 @@ import { StoreModule }        from '@ngrx/store';
 import { poService, reducer } from './store/po.service';
 import { nodeService }        from './store/node.service';
 
+import { APP_INITIALIZER } from '@angular/core';
+import { AppConfig } from './app.config';
+
+export function initializeApp(appConfig: AppConfig) {
+  return () => appConfig.load();
+}
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -24,7 +31,14 @@ import { nodeService }        from './store/node.service';
     SuiModule,
     StoreModule.forRoot(reducer)
   ],
-  providers: [poService,nodeService],
+  providers: [
+	poService,
+	nodeService,
+	AppConfig,
+        { provide: APP_INITIALIZER,
+         useFactory: initializeApp,
+         deps: [AppConfig], multi: true },
+	],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
