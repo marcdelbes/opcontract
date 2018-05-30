@@ -12,7 +12,7 @@ var web3;
 if (typeof web3 !== 'undefined') { web3 = new Web3(web3.currentProvider); } 
 else { web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:22000")); }
 
-console.log("web3 version = " + web3.version.api + ", node = " + web3.version.node);
+console.log("web3 version = " + web3.version.api + " " + web3.version.node );
 
 //
 // Serve all Angular build directory directly as static

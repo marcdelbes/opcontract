@@ -7,7 +7,7 @@ import { SuiModule } from 'ng2-semantic-ui';
 
 import { PO } from './store/po.model';
 import { poService } from './store/po.service';
-import { nodeService } from './store/nodeService';
+import { nodeService } from './store/node.service';
 
 @Component({
   selector: 'app-root',
@@ -52,6 +52,13 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() : void {
+  }
+
+  basicTest( s : string) {
+    this.nodeService.basicTest(s);
+    this.nodeService.getBlockNumber( res => {
+        this.blockNumber = res;
+        });
   }
 
   createPO() {

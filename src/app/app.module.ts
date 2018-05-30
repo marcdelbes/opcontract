@@ -10,7 +10,7 @@ import { AppComponent } from './app.component';
 
 import { StoreModule }        from '@ngrx/store';
 import { poService, reducer } from './store/po.service';
-import { nodeService }        from './store/nodeService';
+import { nodeService }        from './store/node.service';
 
 @NgModule({
   declarations: [

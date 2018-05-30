@@ -37,7 +37,12 @@
 <h3>Node information</h3>
 Default account on the node: <i>{{defaultAccount}}</i><br>
 Total number of accounts: <i>{{accounts.length}}</i><br>
-Current Block Number: <i>{{blockNumber}}</i>
+Current Block Number: <i>{{blockNumber}}</i><br>
+<div class="ui input">
+  <input #box type="text" placeholder="value...">
+</div>
+<a class="ui button" (click)="basicTest(box.value)"><small>basic test</small></a>
+<!--
 <sui-accordion [closeOthers]="false">
     <sui-accordion-panel [isOpen]="false">
         <div title>
@@ -49,7 +54,6 @@ Current Block Number: <i>{{blockNumber}}</i>
         </div>
     </sui-accordion-panel>
 </sui-accordion>
-<!--
 <h4>Last Blockchain response:</h4>
 {{blockchainResponse | async}}
 -->
