@@ -11,6 +11,7 @@ import { AppComponent } from './app.component';
 import { StoreModule }        from '@ngrx/store';
 import { poService, reducer } from './store/po.service';
 import { nodeService }        from './store/node.service';
+import { AuthService }        from './auth.service';
 
 import { APP_INITIALIZER } from '@angular/core';
 import { AppConfig } from './app.config';
@@ -34,6 +35,7 @@ export function initializeApp(appConfig: AppConfig) {
   providers: [
 	poService,
 	nodeService,
+   	AuthService,
 	AppConfig,
         { provide: APP_INITIALIZER,
          useFactory: initializeApp,

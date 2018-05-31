@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Http, Headers, Response } from '@angular/http';
 import * as W3 from 'web3';
 
 import { AppConfig } from '../app.config';
@@ -8,6 +9,8 @@ let Tx = require('ethereumjs-tx');	// required to sign transactions
 import {Buffer} from 'buffer';		// required during tx signature
 
 declare let require: any;
+
+const HEADER = { headers: new Headers({ 'cache': 'false', 'Content-Type': 'application/json' }) };
 
 @Injectable()
 export class nodeService {
@@ -26,18 +29,60 @@ export class nodeService {
   // all accounts on the node
   private _accounts: string[] = null;
 
-  // Constructor: Only connect to the BC and initialize web3
-  constructor() {
+  constructor( private http : Http ) {
 
     this.web3 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:8080"));
     console.log("login contract addr: " + this._loginContractAddr);
     console.log("claim contract addr: " + this._claimContractAddr);
 
+    // test login procedure
+    this.login("0xed9d02e382b34818e88b88a309c7fe71e65f419d","e6181caaffff94a09d7e332fc8da9884d99902c7874eb74354bdcadf411929f1");
+
+  }
+
+  // Perform a login request to the server. This consists in:
+  // 1. calling the REST api to retrieve the raw transaction to sign from the server
+  // 2. signing the transaction with the privkey 
+  // 3. calling the REST api to forward that transaction to the BC
+  // Upon successfull completion, the server should return a JWT token. 
+  // The function return that token to the caller (or null otherwise)
+
+  public login( user: string, pkey : string ) : any {
+
+    console.log("attempting a logon for user " + user + " using privkey " + pkey );
+
+    // call the REST api to retrieve the transaction to sign
+    this.http.get('/api/challenge/' + user, HEADER)
+	.map( res => { return res.json(); } )
+	.subscribe( tx => { 
+		var rawTx = {
+			data: tx.data,
+			from: tx.from,
+			to: tx.to,
+			value: tx.value,
+			gas: tx.gas,
+			nonce: tx.nonce
+            	}; 
+		console.log("received raw tx : " + JSON.stringify(rawTx));	
+    		var privkey = new Buffer( pkey, 'hex');
+    		var tx = new Tx(rawTx); 
+    		tx.sign(privkey);
+    		var serializedTx = '0x' + tx.serialize().toString('hex');
+    		console.log("serialized signed tx: " + serializedTx );
+		
+		// call the REST api to send the transaction back
+		var body = { "signedTx": serializedTx };
+    		this.http.post('/api/login/' + user, body , HEADER)
+			.map( res => { return res.json(); } )
+			.subscribe( token => { console.log("token : " + token )
+            				} ); 
+		
+            } ); 
+    
   }
 
   // Basic test: Send a signed transaction and check that contract method has been executed by writing a new string
   public basicTest( s : string ) {
-
 
     var acc = this._accounts[0]; 
     console.log("using account '" + acc + "'");

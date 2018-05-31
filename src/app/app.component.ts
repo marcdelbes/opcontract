@@ -30,11 +30,6 @@ export class AppComponent implements OnInit {
   
   constructor(private poService : poService, private nodeService : nodeService ) { 
 
-    //this.customerPOs$ = this.poService.getPOs().map( p => p.filter( po => po.BCP == 'Airbus' ) );
-    //this.supplierPOs$ = this.poService.getPOs();
-    //this.blockchainResponse = this.poService.getMessage();
-    //this.poService.loadAllPOs();
-
     // retrieve the last block number and then the details
     this.nodeService.getBlockNumber( res => { 
 	this.blockNumber = res; 
@@ -59,18 +54,6 @@ export class AppComponent implements OnInit {
     this.nodeService.getBlockNumber( res => {
         this.blockNumber = res;
         });
-  }
-
-  createPO() {
-    this.poService.createPO();
-  }
-
-  supplierAcceptPO(id:string) {
-   this.poService.supplierAcceptPO(id);
-  }
-  
-  supplierRejectPO(id:string) {
-   this.poService.supplierRejectPO(id);
   }
 
 
