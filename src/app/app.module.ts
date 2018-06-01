@@ -2,6 +2,7 @@ import { BrowserModule } 		from '@angular/platform-browser';
 import { NgModule } 			from '@angular/core';
 import { FormsModule }   		from '@angular/forms';
 import { BrowserAnimationsModule } 	from '@angular/platform-browser/animations';
+import { HttpClientModule } 		from '@angular/common/http';
 import { HttpModule } 			from '@angular/http';
 
 import {SuiModule} from 'ng2-semantic-ui';
@@ -16,6 +17,9 @@ import { AuthService }        from './auth.service';
 import { APP_INITIALIZER } from '@angular/core';
 import { AppConfig } from './app.config';
 
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { AuthInterceptor } from './auth.interceptor';
+
 export function initializeApp(appConfig: AppConfig) {
   return () => appConfig.load();
 }
@@ -29,6 +33,7 @@ export function initializeApp(appConfig: AppConfig) {
     BrowserAnimationsModule,
     FormsModule,
     HttpModule,
+    HttpClientModule,
     SuiModule,
     StoreModule.forRoot(reducer)
   ],
@@ -36,6 +41,11 @@ export function initializeApp(appConfig: AppConfig) {
 	poService,
 	nodeService,
    	AuthService,
+	{
+      	  provide: HTTP_INTERCEPTORS,
+          useClass: AuthInterceptor,
+          multi: true
+        },
 	AppConfig,
         { provide: APP_INITIALIZER,
          useFactory: initializeApp,

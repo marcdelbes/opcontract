@@ -1,10 +1,14 @@
 var express = require("express");
 var http    = require('http');
 var bodyParser = require("body-parser");
+var jwt = require('jsonwebtoken');
+var bcrypt = require('bcryptjs');
 var app = express();
 
 var config = require("./src/assets/config.dev.json");
 var loginContractAbi = require("./src/app/contracts/Login.json");
+
+var secret = 'supersecret';
 
 //
 // connect to a specific geth node via web3
@@ -95,6 +99,28 @@ app.get("/api/challenge/:user", function(req,res) {
   }
 );
 
+// GET  /api/testToken		basic test of the incoming token
+app.get("/api/testToken", function(req,res) {
+  console.log("someone is testing me ...");
+  var token = req.body.token || req.query.token || req.headers['x-access-token'];
+
+  // decode token
+  if (token) {
+
+    // verifies secret and checks exp
+    jwt.verify(token, secret, function(err, decoded) {      
+      if (err) {
+        console.log('Failed to authenticate token.');    
+      } else {
+        console.log('Token OK !');    
+      }
+     });
+
+  } else {
+        console.log('NO TOKEN FOUND!');    
+  }
+});
+
  
 // POST /api/login/:user	forward to the BC a signed raw transaction as authentication method for the given user
 //				then check for the transaction to be properly mined, and check the challenge
@@ -130,7 +156,18 @@ app.post("/api/login/:user", function(req,res) {
     						let contract = web3.eth.contract(loginContractAbi).at(config.contracts.loginContractAddr);
 						if (contract.isMatching( user )) {
 							console.log("Challenge & attempt are identical. OK to generate JWT token");
-                                		} else {
+                                			// create a token, send it back
+    							var token = jwt.sign({ id: user }, secret, {
+      									expiresIn: 3600 // expires in 1 hour
+    							});
+							//const token = jwt.sign({}, secret, {
+                					//	algorithm: 'RS256',
+                					//	expiresIn: 120,
+                					//	subject: user
+            						//});
+
+							res.status(200).send({ auth: true, idToken: token, expiresIn: 120, user: user });
+						} else {
 							console.log("KO: Challenge & attempt are different ! ");
 							res.status(403).send("Connection refused. Wrong challenge.");
                                 		}
