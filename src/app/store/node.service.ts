@@ -10,19 +10,12 @@ import {Buffer} from 'buffer';		// required during tx signature
 
 var HttpHeaderProvider = require('httpheaderprovider');
 
-var headers = {
-  "x-access-token": ""
-};
-
 declare let require: any;
 
 @Injectable()
 export class nodeService {
 
   web3: any;
-
-  isSigned = false;
-  txHash = '';
 
   _claimContractAddr = AppConfig.settings.contracts.claimContractAddr; 
   _claimContractAbi = require('../contracts/ownerclaimsContract.json');
@@ -31,15 +24,20 @@ export class nodeService {
   private _accounts: string[] = null;
 
   constructor( private authService: AuthService ) {
+  }
 
-    // this.web3 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:8080"));
+  // This function is called when authentication is done, and must be called prior to any access to Web3.js
+  public init() {
+
+    // prepare appropriate HTTP header with authorization token
+    var headers = {
+  	"Authorization":  "Bearer " + this.authService.getToken()
+	};
 
     var provider = new HttpHeaderProvider('http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:8080', headers);
     this.web3 = new Web3(provider);
+    console.log("connected to node via web3");
     console.log("claim contract addr: " + this._claimContractAddr);
-
-    // test login procedure
-    this.authService.login("0xed9d02e382b34818e88b88a309c7fe71e65f419d","e6181caaffff94a09d7e332fc8da9884d99902c7874eb74354bdcadf411929f1");
 
   }
 
@@ -58,7 +56,7 @@ export class nodeService {
 
     // now call the same function but with signed tx
     var data = contract.setDefaultClaim.getData(s);
-    var privkey = new Buffer('e6181caaffff94a09d7e332fc8da9884d99902c7874eb74354bdcadf411929f1', 'hex'); // UGLY, never do that
+    var privkey = new Buffer( this.authService.getKey(), 'hex'); 
 
     var rawTx = {
 	 data : data,
@@ -76,15 +74,14 @@ export class nodeService {
     console.log("sending signed tx. Wait for console.log");
     this.web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex') , (error, result) => {
                                 if(!error) {
-				    this.txHash = result;
-                                    console.log("tx hash = " + this.txHash);
-   				    for (let i = 0; i < 10 && !this.isSigned ; i++) { 
-    				      	console.log("Looking for transaction " + this.txHash + ", tentative " + i);
-    					var block = this.web3.eth.getTransaction( this.txHash ).blockNumber;
-    					// var block = this.getTx( this.txHash );
+				    var found = false;
+                                    console.log("tx hash = " + result);
+   				    for (let i = 0; i < 10 && !found ; i++) { 
+    				      	console.log("Looking for transaction " + result + ", tentative " + i);
+    					var block = this.web3.eth.getTransaction( result ).blockNumber;
     					if (block != null) {
-						console.log("Found the transaction " + this.txHash + " in block " + block + " !");
-						this.isSigned = true;
+						console.log("Found the transaction " + result + " in block " + block + " !");
+						found = true;
       					} 
     				  	// Wait 1 second, and retest 
     					setTimeout(() => {}, 1000);

@@ -157,7 +157,7 @@ app.post("/api/login/:user", function(req,res) {
 						if (contract.isMatching( user )) {
 							console.log("Challenge & attempt are identical. OK to generate JWT token");
                                 			// create a token, send it back
-    							var token = jwt.sign({ id: user }, secret, {
+    							var token = jwt.sign({ "sub": user }, secret, {
       									expiresIn: 3600 // expires in 1 hour
     							});
 							//const token = jwt.sign({}, secret, {

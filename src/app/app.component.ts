@@ -8,6 +8,7 @@ import { SuiModule } from 'ng2-semantic-ui';
 import { PO } from './store/po.model';
 import { poService } from './store/po.service';
 import { nodeService } from './store/node.service';
+import { AuthService } from './auth.service';
 
 @Component({
   selector: 'app-root',
@@ -19,16 +20,22 @@ import { nodeService } from './store/node.service';
 
 export class AppComponent implements OnInit {
 
-  customerPOs$: Observable<PO[]>;
-  supplierPOs$: Observable<PO[]>;
-  blockchainResponse: Observable<string>;
-
   blockNumber: string = 'retrieving...';
   blockDetail: string = 'retrieving...';
   defaultAccount: string = 'none';
   accounts: string[] = [];
   
-  constructor(private poService : poService, private nodeService : nodeService ) { 
+  constructor(private poService : poService, private nodeService : nodeService, private authService: AuthService ) { 
+  }
+
+  ngOnInit() : void {
+  }
+
+  login( account: string, key: string ) {
+
+    this.authService.login( account, key ).then( l => {
+
+    this.nodeService.init();
 
     // retrieve the last block number and then the details
     this.nodeService.getBlockNumber( res => { 
@@ -44,11 +51,14 @@ export class AppComponent implements OnInit {
 	if (res && res.length != 0) this.defaultAccount = res[0]; 
 	});
 
-  }
+  });
 
-  ngOnInit() : void {
   }
-
+ 
+  logout() {
+    this.authService.logout();
+  }
+  
   basicTest( s : string) {
     this.nodeService.basicTest(s);
     this.nodeService.getBlockNumber( res => {

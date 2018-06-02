@@ -1,0 +1,49 @@
+env JWT_SECRET=supersecret;
+worker_processes  1;
+error_log logs/error.log;
+events {
+    worker_connections 1024;
+}
+http {
+ lua_package_path "/home/ubuntu/site/pocollab/pocollab/openresty/?.lua;;";
+
+ server {
+  listen 80;
+  server_name pocollab;
+  location / {
+    proxy_set_header  X-Real-IP  $remote_addr;
+    proxy_set_header  Host       $http_host;
+    proxy_pass        http://127.0.0.1:4200;
+  }
+ }
+
+ server {
+  listen 8080;
+  server_name geth;
+  location / {
+
+    access_by_lua '
+            local jwt = require("nginx-jwt")
+            jwt.auth()
+        ';
+
+    # Simple requests
+    if ($request_method ~* "(GET|POST)") {
+      add_header "Access-Control-Allow-Origin"  "*";
+    }
+
+    # Preflighted requests
+    if ($request_method = OPTIONS ) {
+      add_header "Access-Control-Allow-Origin"  "*";
+      add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+      add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept, X-Access-Token";
+      return 200;
+    }
+
+    proxy_set_header  X-Real-IP  $remote_addr;
+    proxy_set_header  Host       $http_host;
+    proxy_pass        http://127.0.0.1:22000;
+  }
+}
+
+}

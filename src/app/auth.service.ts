@@ -1,7 +1,6 @@
 import { Component, Injectable } from '@angular/core';
 //import { Http, Headers, Response } from '@angular/http';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { nodeService } from './store/node.service';
 import { AppConfig } from './app.config';
 import * as W3 from 'web3';
 
@@ -20,6 +19,8 @@ export class AuthService {
   _loginContractAddr = AppConfig.settings.contracts.loginContractAddr;
   _loginContractAbi = require('./contracts/Login.json');
 
+  _pkey : string = '';
+
   constructor( private http: HttpClient ) {
  	console.log("login contract addr: " + this._loginContractAddr);
 	this.logout(); // we reset all token information at boostrap	
@@ -30,11 +31,14 @@ export class AuthService {
   // with that challenge, to be mined by the blockchain.
   // In response, the server will eventually call the callback URL to pass a JWT token
 
-  public login( user: string, pkey : string ) : any {
+  public login( user: string, pkey : string ) : Promise<string> {
 
     console.log("attempting a logon for user " + user + " using privkey " + pkey );
+    this._pkey = pkey;
 
     // call the REST api to retrieve the transaction to sign
+    return new Promise<string>( (resolve,reject) => {
+
     this.http.get('/api/challenge/' + user)
         //.map( res => { return res.json(); } )
         .subscribe( tx => {
@@ -60,24 +64,20 @@ export class AuthService {
                         .subscribe( authRes => {
                                 console.log("authRes : " + JSON.stringify(authRes) )
 				this.setSession(authRes);
-				this.testToken();
+   				resolve();
                                 } );
 
             } );
 
-  }
+  });
 
-  // basic test : call the server that will check that the token is OK
-  private testToken() {
-    this.http.get('/api/testToken/' , HEADER)
-        //.map( res => { return res.json(); } )
-        .subscribe();
   }
+ 
 
   private setSession(authRes): void {
     // Set the time that the access token will expire at
     const expiresAt = JSON.stringify((authRes.expiresIn * 1000) + new Date().getTime());
-    console.log("setting session with user " + authRes.user );
+    console.log("setting session with user " + authRes.user + ", token=" + authRes.idToken );
     localStorage.setItem('id_token', authRes.idToken);
     localStorage.setItem('expires_at', expiresAt);
     localStorage.setItem('p2p_user', authRes.user);
@@ -101,6 +101,14 @@ export class AuthService {
 
   public getUser(): string {
     return localStorage['p2p_user']; 
+  }
+
+  public getToken(): string {
+    return localStorage['id_token']; 
+  }
+
+  public getKey(): string {
+    return this._pkey; 
   }
 
 }

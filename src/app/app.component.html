@@ -1,37 +1,59 @@
-  <div class="ui fixed inverted borderless pointing menu">
-    <div class="ui container">
-      <a href="#" class="header item">
-        <img class="logo" src="assets/p2p.png">
-        &nbsp;Collaboration BC
+<div class="ui fixed inverted borderless pointing menu">
+      <a href="#" class="item">
+        <img class="logo" src="assets/p2p.png"> &nbsp;Collaboration BC
+        <div class="item" *ngIf="authService.isAuthenticated()">currently logged as {{authService.getUser()}}</div>
       </a>
-      <a href="#" class="item">Home</a>
-      <div class="ui simple dropdown item">
-        Dropdown <i class="dropdown icon"></i>
-        <div class="menu">
-          <a class="item" href="#">Link Item</a>
-          <a class="item" href="#">Link Item</a>
-          <div class="divider"></div>
-          <div class="header">Header Item</div>
-          <div class="item">
-            <i class="dropdown icon"></i>
-            Sub Menu
-            <div class="menu">
-              <a class="item" href="#">Link Item</a>
-              <a class="item" href="#">Link Item</a>
-            </div>
-          </div>
-          <a class="item" href="#">Link Item</a>
-        </div>
-      </div>
+      <div class="right menu">
+      	  <div class="item" *ngIf="authService.isAuthenticated()"> <a class="ui button" (click)="logout()"><small>Log out</small></a> </div>
     </div>
-    	<div class="right menu">
- 	  <div class="item">Logged as ...</div>
-      	  <div class="item"> <a class="ui button" (click)="login()"><small>Log in</small></a> </div>
-      	  <div class="item"> <a class="ui button" (click)="logout()"><small>Log out</small></a> </div>
-    	</div>
-  </div>
+</div>
 
-<div style="margin-top: 5em;">
+<!-- LOGIN BLOCK -->
+<div style="margin-top: 5em;" *ngIf="!authService.isAuthenticated()">
+
+<div class="ui middle aligned center aligned grid">
+  <div class="column" style="width:600px;">
+    <h2 class="ui teal header">
+      <div class="content">
+        Log in to your account
+      </div>
+    </h2>
+    <form class="ui large form">
+	<div class="ui segment">
+        <div class="field">
+          <div class="ui left icon input">
+            <i class="user icon"></i>
+            <input #boxAccount type="text" name="account" placeholder="your account">
+          </div>
+        </div>
+        <div class="field">
+          <div class="ui left icon input">
+            <i class="lock icon"></i>
+            <input #boxKey type="password" name="key" placeholder="your key">
+          </div>
+        </div>
+        <div class="ui large teal submit button" (click)="login(boxAccount.value,boxKey.value)">Login</div>
+	</div>
+    </form>
+
+  </div>
+</div>
+
+</div>
+
+<!--
+<div class="ui inverted blue segment">
+<div class="ui fluid input">
+  <input #boxAccount type="text" placeholder="your account">
+  <input #boxKey type="text" placeholder="your key">
+</div>
+<a class="ui button" (click)="login(boxAccount.value,boxKey.value)"><small>Login</small></a>
+</div>
+</div>
+-->
+
+<!-- PAGE CONTENT BLOCK -->
+<div style="margin-top: 5em;" *ngIf="authService.isAuthenticated()">
 
 <div class="ui inverted violet segment">
 <h3>Node information</h3>
