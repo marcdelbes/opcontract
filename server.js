@@ -2,13 +2,20 @@ var express = require("express");
 var http    = require('http');
 var bodyParser = require("body-parser");
 var jwt = require('jsonwebtoken');
-var bcrypt = require('bcryptjs');
+var Tx = require('ethereumjs-tx');      // required to sign transactions
+var Buffer = require('buffer').Buffer;
+//var bcrypt = require('bcryptjs');
 var app = express();
 
 var config = require("./src/assets/config.dev.json");
 var loginContractAbi = require("./src/app/contracts/Login.json");
 
-var secret = 'supersecret';
+// server & superuser information
+// FIXME avoid hardcoding and in clear !!
+
+var secret = 'supersecret';  // JWT token secret
+var superuser = '0xed9d02e382b34818e88b88a309c7fe71e65f419d';	// BC super account
+var superkey = 'e6181caaffff94a09d7e332fc8da9884d99902c7874eb74354bdcadf411929f1';  // corresponding key
 
 //
 // connect to a specific geth node via web3
@@ -51,16 +58,16 @@ function handleError(res, reason, message, code) {
 //
 
 // GET /api/accounts		retrieve all accounts on the node
-app.get("/api/accounts", function(req,res) {
-    res.send(JSON.stringify(web3.eth.accounts));
-  }
-);
+//app.get("/api/accounts", function(req,res) {
+//    res.send(JSON.stringify(web3.eth.accounts));
+//  }
+//);
 
 // GET /api/blockNumber		retrieve the current block number
-app.get("/api/blockNumber", function(req,res) {
-    res.send(JSON.stringify(web3.eth.blockNumber));
-  }
-);
+//app.get("/api/blockNumber", function(req,res) {
+//    res.send(JSON.stringify(web3.eth.blockNumber));
+//  }
+//);
 
 
 // GET  /api/challenge/:user	send a prepared transaction to the requestor, for the given user
@@ -75,20 +82,37 @@ app.get("/api/challenge/:user", function(req,res) {
 
     // retrieve contract
     let contract = web3.eth.contract(loginContractAbi).at(config.contracts.loginContractAddr);
+
+    // check if user exists
+    var found = false;
+    for (i=0;i<web3.eth.accounts.length;i++) if (web3.eth.accounts[ i ]== user) found = true;
+    if (!found) { 
+      res.status(403).send({ auth: false, error: "Sorry, you don't exist on that node..."});
+    }
+
+    // store this challenge using the superuser account
+    // here we use a signed tx instead of doing an unsecure call:
+    //    web3.personal.unlockAccount(user,"",1);
+    //    contract.setChallenge( user, challenge, { from: user, gas: 1000000 } );
+    let cdata = contract.setChallenge.getData( user, challenge );
+    var cTx = {
+         data : cdata,
+         from : superuser,
+         gas: 1000000,
+         value: 0,
+         to: config.contracts.loginContractAddr,
+         nonce: web3.eth.getTransactionCount(superuser),
+        }
+
+    var ctx = new Tx(cTx);
+    var skey = new Buffer( superkey, 'hex');
+    ctx.sign(skey);
+    var cserializedTx = ctx.serialize();
+    console.log("sending signed tx for challenge");
+    web3.eth.sendRawTransaction('0x' + cserializedTx.toString('hex')); 
+
+    // return a prepared transaction to the caller, without executing it for the moment
     let data = contract.loginAttempt.getData( challenge );
-
-    // store this challenge
-    // FIXME: this should be done with a kind of superuser, not the user itself ! But for the moment I have only 1 user !
-    try { 
-      web3.personal.unlockAccount(user,"",1);
-    }
-    catch (error) { 
-      res.status(403).send({ auth: false, error: "Invalid user."});
-    }
-
-    contract.setChallenge( user, challenge, { from: user, gas: 1000000 } );
-
-    // return a prepared transaction
     var rawTx = {
          data : data,
          from : user,

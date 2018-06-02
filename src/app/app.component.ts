@@ -24,6 +24,7 @@ export class AppComponent implements OnInit {
   blockDetail: string = 'retrieving...';
   defaultAccount: string = 'none';
   loginStatus = '';
+  isLoading = null;
   accounts: string[] = [];
   
   constructor(private poService : poService, private nodeService : nodeService, private authService: AuthService ) { 
@@ -33,6 +34,9 @@ export class AppComponent implements OnInit {
   }
 
   login( account: string, key: string ) {
+
+    this.loginStatus = '';
+    this.isLoading = true;
 
     this.authService.login( account, key ).then( 
 	logged => {
@@ -58,11 +62,14 @@ export class AppComponent implements OnInit {
 
 	error => {
 
+		// cannot connect. Say why
 		this.loginStatus = error;
 
   	}
 
 	);
+
+    this.isLoading = null;
 
   }
  

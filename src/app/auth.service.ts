@@ -23,7 +23,7 @@ export class AuthService {
 
   constructor( private http: HttpClient ) {
  	console.log("login contract addr: " + this._loginContractAddr);
-	this.logout(); // we reset all token information at boostrap	
+	this.logout(); // we reset all token information at boostrap, for testing purpose
   }
 
   // request the node service to attempt a login using the private key of the user  
@@ -51,9 +51,13 @@ export class AuthService {
                         nonce: tx['nonce']
                 	};
                 console.log("received raw tx : " + JSON.stringify(rawTx));
-                var privkey = new Buffer( pkey, 'hex');
-                var stx = new Tx(rawTx);
-                stx.sign(privkey);
+		try {
+                  var privkey = new Buffer( pkey, 'hex');
+                  var stx = new Tx(rawTx);
+                  stx.sign(privkey);
+  		} catch(error) {
+		  reject("Cannot sign. Invalid key");
+  		} 
                 var serializedTx = '0x' + stx.serialize().toString('hex');
                 console.log("serialized signed tx: " + serializedTx );
 
