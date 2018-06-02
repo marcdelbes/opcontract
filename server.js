@@ -79,7 +79,13 @@ app.get("/api/challenge/:user", function(req,res) {
 
     // store this challenge
     // FIXME: this should be done with a kind of superuser, not the user itself ! But for the moment I have only 1 user !
-    web3.personal.unlockAccount(user,"",1);
+    try { 
+      web3.personal.unlockAccount(user,"",1);
+    }
+    catch (error) { 
+      res.status(403).send({ auth: false, error: "Invalid user."});
+    }
+
     contract.setChallenge( user, challenge, { from: user, gas: 1000000 } );
 
     // return a prepared transaction
@@ -150,7 +156,7 @@ app.post("/api/login/:user", function(req,res) {
 
 				    if (!found) {
 						// refuse access
-						res.status(403).send("Connection refused. Transaction not mined.");
+						res.status(403).send({ auth: false, error: "Connection refused. Transaction not mined."});
                                 	} else  {
 						// check that the challenge and attempt values are the same
     						let contract = web3.eth.contract(loginContractAbi).at(config.contracts.loginContractAddr);
@@ -165,17 +171,17 @@ app.post("/api/login/:user", function(req,res) {
                 					//	expiresIn: 120,
                 					//	subject: user
             						//});
-
+							console.log("token: " + token );
 							res.status(200).send({ auth: true, idToken: token, expiresIn: 120, user: user });
 						} else {
 							console.log("KO: Challenge & attempt are different ! ");
-							res.status(403).send("Connection refused. Wrong challenge.");
+							res.status(403).send({ auth: false, error: "Connection refused. Wrong challenge."});
                                 		}
                                 	}
 
                                 } else {
                                    console.log(error);
-				   res.status(403).send("Connection refused. Error sending transaction to the BC.");
+				   res.status(403).send({ auth: false, error: "Connection refused. Internal error sending transaction to the BC."});
                                 }
 
   			}

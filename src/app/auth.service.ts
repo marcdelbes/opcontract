@@ -40,8 +40,8 @@ export class AuthService {
     return new Promise<string>( (resolve,reject) => {
 
     this.http.get('/api/challenge/' + user)
-        //.map( res => { return res.json(); } )
-        .subscribe( tx => {
+        .subscribe( 
+	   tx => {
                 var rawTx = {
                         data: tx['data'],
                         from: tx['from'],
@@ -49,7 +49,7 @@ export class AuthService {
                         value: tx['value'],
                         gas: tx['gas'],
                         nonce: tx['nonce']
-                };
+                	};
                 console.log("received raw tx : " + JSON.stringify(rawTx));
                 var privkey = new Buffer( pkey, 'hex');
                 var stx = new Tx(rawTx);
@@ -60,14 +60,25 @@ export class AuthService {
                 // call the REST api to send the transaction back
                 var body = { "signedTx": serializedTx };
                 this.http.post('/api/login/' + user, body , HEADER)
-                        //.map( res => { return res.json(); } )
                         .subscribe( authRes => {
-                                console.log("authRes : " + JSON.stringify(authRes) )
-				this.setSession(authRes);
-   				resolve();
-                                } );
+                                	console.log("authRes : " + JSON.stringify(authRes) )
+				  	this.setSession(authRes);
+   				  	resolve("OK");
+					},
+				    err =>{
+				  	console.log("there was an error while logging:" + JSON.stringify(err['error']) );
+					var message = err['error']['error']; // not nice... please do some typechecking
+				  	reject(message);
+                                	} 
+                         );
 
-            } );
+            	} ,
+	    err =>{
+	  	console.log("there was an error while requesting challenge:" + JSON.stringify(err['error']) );
+		var message = err['error']['error']; // not nice... please do some typechecking
+	  	reject(message);
+              	} 
+	);
 
   });
 

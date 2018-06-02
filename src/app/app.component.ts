@@ -23,6 +23,7 @@ export class AppComponent implements OnInit {
   blockNumber: string = 'retrieving...';
   blockDetail: string = 'retrieving...';
   defaultAccount: string = 'none';
+  loginStatus = '';
   accounts: string[] = [];
   
   constructor(private poService : poService, private nodeService : nodeService, private authService: AuthService ) { 
@@ -33,30 +34,41 @@ export class AppComponent implements OnInit {
 
   login( account: string, key: string ) {
 
-    this.authService.login( account, key ).then( l => {
+    this.authService.login( account, key ).then( 
+	logged => {
 
-    this.nodeService.init();
+		// initialize the connection to the node prior to anything else !!
+    		this.nodeService.init();
 
-    // retrieve the last block number and then the details
-    this.nodeService.getBlockNumber( res => { 
-	this.blockNumber = res; 
-	this.nodeService.getBlockDetail( this.blockNumber, res => {
-		this.blockDetail = res; 
-    	});
-    });
+    		// retrieve the last block number and then the details
+    		this.nodeService.getBlockNumber( res => { 
+			this.blockNumber = res; 
+			this.nodeService.getBlockDetail( this.blockNumber, res => {
+			this.blockDetail = res; 
+    			});
+    		});
 
-    // retrieve all accounts, and store the default one
-    this.nodeService.getAccounts( res => { 
-	this.accounts = res; 
-	if (res && res.length != 0) this.defaultAccount = res[0]; 
-	});
+    		// retrieve all accounts, and store the default one
+    		this.nodeService.getAccounts( res => { 
+			this.accounts = res; 
+			if (res && res.length != 0) this.defaultAccount = res[0]; 
+		});
 
-  });
+  	},
+
+	error => {
+
+		this.loginStatus = error;
+
+  	}
+
+	);
 
   }
  
   logout() {
     this.authService.logout();
+    this.loginStatus = '';
   }
   
   basicTest( s : string) {
