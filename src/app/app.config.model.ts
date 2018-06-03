@@ -5,6 +5,7 @@ export interface IAppConfig {
     contracts: {
         claimContractAddr: string;
         loginContractAddr: string;
+        loginContractAbi: string;
     };
 }
 

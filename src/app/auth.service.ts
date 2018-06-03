@@ -17,7 +17,7 @@ const HEADER = {
 export class AuthService {
 
   _loginContractAddr = AppConfig.settings.contracts.loginContractAddr;
-  _loginContractAbi = require('./contracts/Login.json');
+  _loginContractAbi = require("./contracts/Login.v2.json");
 
   _pkey : string = '';
 
@@ -31,15 +31,16 @@ export class AuthService {
   // with that challenge, to be mined by the blockchain.
   // In response, the server will eventually call the callback URL to pass a JWT token
 
-  public login( user: string, pkey : string ) : Promise<string> {
+  public login( userOrEmail: string, pkey : string ) : Promise<string> {
 
-    console.log("attempting a logon for user " + user + " using privkey " + pkey );
+    console.log("attempting a logon for user/email " + userOrEmail + " using privkey " + pkey );
     this._pkey = pkey;
 
     // call the REST api to retrieve the transaction to sign
     return new Promise<string>( (resolve,reject) => {
-
-    this.http.get('/api/challenge/' + user)
+              
+    var body = { "userOrEmail": userOrEmail };
+    this.http.post('/api/challenge/', body, HEADER)
         .subscribe( 
 	   tx => {
                 var rawTx = {
@@ -63,7 +64,7 @@ export class AuthService {
 
                 // call the REST api to send the transaction back
                 var body = { "signedTx": serializedTx };
-                this.http.post('/api/login/' + user, body , HEADER)
+                this.http.post('/api/login/' + tx['from'], body , HEADER)
                         .subscribe( authRes => {
                                 	console.log("authRes : " + JSON.stringify(authRes) )
 				  	this.setSession(authRes);

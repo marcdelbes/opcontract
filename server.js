@@ -8,7 +8,8 @@ var Buffer = require('buffer').Buffer;
 var app = express();
 
 var config = require("./src/assets/config.dev.json");
-var loginContractAbi = require("./src/app/contracts/Login.json");
+//var loginContractAbi = require("./src/app/contracts/Login.v2.json");
+var loginContractAbi = require("./src/app/" + config.contracts.loginContractAbi);
 
 // server & superuser information
 // FIXME avoid hardcoding and in clear !!
@@ -70,10 +71,12 @@ function handleError(res, reason, message, code) {
 //);
 
 
-// GET  /api/challenge/:user	send a prepared transaction to the requestor, for the given user
-app.get("/api/challenge/:user", function(req,res) {
+// POST  /api/challenge		send a prepared transaction to the requestor, for the given user or email given in the body
+app.post("/api/challenge", function(req,res) {
 
-    let user = req.params.user;
+    let user = req.body.userOrEmail;
+    if (user == null || user == "") res.status(403).send({ auth: false, error: "Sorry, malformed request..."});
+
     console.log("receiving challenge request for user " + user );
 
     // define challenge
@@ -83,18 +86,20 @@ app.get("/api/challenge/:user", function(req,res) {
     // retrieve contract
     let contract = web3.eth.contract(loginContractAbi).at(config.contracts.loginContractAddr);
 
-    // check if user exists
-    var found = false;
-    for (i=0;i<web3.eth.accounts.length;i++) if (web3.eth.accounts[ i ]== user) found = true;
-    if (!found) { 
-      res.status(403).send({ auth: false, error: "Sorry, you don't exist on that node..."});
+    // check if user or email exists
+    //for (i=0;i<web3.eth.accounts.length;i++) if (web3.eth.accounts[ i ]== user) found = true;
+    var addr = contract.getAccount(user);
+    console.log("following address was returned for this user:" + addr ); 
+    if (addr == "0x0000000000000000000000000000000000000000") { 
+      res.status(403).send({ auth: false, error: "Sorry, invalid account or email..."});
+      return;
     }
 
     // store this challenge using the superuser account
     // here we use a signed tx instead of doing an unsecure call:
     //    web3.personal.unlockAccount(user,"",1);
     //    contract.setChallenge( user, challenge, { from: user, gas: 1000000 } );
-    let cdata = contract.setChallenge.getData( user, challenge );
+    let cdata = contract.setChallenge.getData( addr, challenge );
     var cTx = {
          data : cdata,
          from : superuser,
@@ -115,11 +120,11 @@ app.get("/api/challenge/:user", function(req,res) {
     let data = contract.loginAttempt.getData( challenge );
     var rawTx = {
          data : data,
-         from : user,
+         from : addr,
          gas: 1000000,
          value: 0,
          to: config.contracts.loginContractAddr,
-         nonce: web3.eth.getTransactionCount(user),
+         nonce: web3.eth.getTransactionCount(addr),
         }
 
     console.log("Responding with the following tx: " + JSON.stringify(rawTx));

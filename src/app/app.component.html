@@ -23,7 +23,7 @@
         <div class="field">
           <div class="ui left icon input">
             <i class="user icon"></i>
-            <input #boxAccount type="text" name="account" placeholder="your account">
+            <input #boxAccount type="text" name="account" placeholder="your account or your email">
           </div>
         </div>
         <div class="field">
@@ -33,6 +33,7 @@
           </div>
         </div>
         <div class="ui large teal submit button" (click)="login(boxAccount.value,boxKey.value)">Login</div>
+
 	</div>
     </form>
     <div>{{loginStatus}}</div>
