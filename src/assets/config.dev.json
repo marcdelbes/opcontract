@@ -3,8 +3,17 @@
     "name": "DEV"
      },
     "contracts": {
-    "claimContractAddr": "0xe273fd8a6deb07c4bd7226e0ba05724dcb4bd38a",
-    "loginContractAddr": "0x1f307a75b97982f13410f85dca9212bc772b1943",
-    "loginContractAbi": "./contracts/Login.v2.json"
+    "claimContractAddr": "0x1349f3e1b8d71effb47b840594ff27da7e603d17",
+    "loginContractAddrNode1": "0x4180626d5847c214594a03cbaae45d22e3878712",
+    "loginContractAddrNode2": "0x180893a0ec847fa8c92786791348d7d65916acbb",
+    "loginContractAbi": "./contracts/Login.v3.json",
+    "p2pContractAddr":"0xd6f1b150c95c674f1c7329d1285e1806511b94be",
+    "p2pContractAbi": "./contracts/P2PContract.json",
+    "opContractAddr": "0xa8385ee03bea382b2456a9352e0d7d255b4a4a12",
+    "opContractAbi": "./contracts/OPContract_v2.json",
+    "vendorAddr": "0xdf360058f2c35dddcaf82ea4a97eab8664dd3288",
+    "vendorPwd": "password",
+    "buyerAddr": "0x9186eb3d20cbd1f5f992a950d808c4495153abd5",
+    "buyerPwd": ""
     }
 }

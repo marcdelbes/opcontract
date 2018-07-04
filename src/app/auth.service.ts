@@ -16,14 +16,9 @@ const HEADER = {
 @Injectable()
 export class AuthService {
 
-  _loginContractAddr = AppConfig.settings.contracts.loginContractAddr;
-  _loginContractAbi = require("./contracts/Login.v2.json");
-
   _pkey : string = '';
 
   constructor( private http: HttpClient ) {
- 	console.log("login contract addr: " + this._loginContractAddr);
-	this.logout(); // we reset all token information at boostrap, for testing purpose
   }
 
   // request the node service to attempt a login using the private key of the user  
@@ -42,16 +37,17 @@ export class AuthService {
     var body = { "userOrEmail": userOrEmail };
     this.http.post('/api/challenge/', body, HEADER)
         .subscribe( 
-	   tx => {
+	   res => {
+                var nodeIndex = res['nodeIndex'];
                 var rawTx = {
-                        data: tx['data'],
-                        from: tx['from'],
-                        to: tx['to'],
-                        value: tx['value'],
-                        gas: tx['gas'],
-                        nonce: tx['nonce']
+                        data: res['rawTx']['data'],
+                        from: res['rawTx']['from'],
+                        to: res['rawTx']['to'],
+                        value: res['rawTx']['value'],
+                        gas: res['rawTx']['gas'],
+                        nonce: res['rawTx']['nonce']
                 	};
-                console.log("received raw tx : " + JSON.stringify(rawTx));
+                console.log("received node index " + nodeIndex + " and raw tx : " + JSON.stringify(rawTx));
 		try {
                   var privkey = new Buffer( pkey, 'hex');
                   var stx = new Tx(rawTx);
@@ -64,10 +60,10 @@ export class AuthService {
 
                 // call the REST api to send the transaction back
                 var body = { "signedTx": serializedTx };
-                this.http.post('/api/login/' + tx['from'], body , HEADER)
+                this.http.post('/api/login/' + res['rawTx']['from'] + "/" + nodeIndex , body , HEADER)
                         .subscribe( authRes => {
                                 	console.log("authRes : " + JSON.stringify(authRes) )
-				  	this.setSession(authRes);
+				  	this.setSession(authRes,nodeIndex);
    				  	resolve("OK");
 					},
 				    err =>{
@@ -90,13 +86,15 @@ export class AuthService {
   }
  
 
-  private setSession(authRes): void {
+  private setSession(authRes,nodeIndex): void {
     // Set the time that the access token will expire at
     const expiresAt = JSON.stringify((authRes.expiresIn * 1000) + new Date().getTime());
-    console.log("setting session with user " + authRes.user + ", token=" + authRes.idToken );
+    console.log("setting session with user " + authRes.user + ", roles = " + authRes.roles + ", token=" + authRes.idToken );
     localStorage.setItem('id_token', authRes.idToken);
     localStorage.setItem('expires_at', expiresAt);
     localStorage.setItem('p2p_user', authRes.user);
+    localStorage.setItem('p2p_roles', authRes.roles);
+    localStorage.setItem('p2p_nodeIndex', nodeIndex);
   }
 
   public logout(): void {
@@ -104,6 +102,8 @@ export class AuthService {
     localStorage.removeItem('id_token');
     localStorage.removeItem('expires_at');
     localStorage.removeItem('p2p_user');
+    localStorage.removeItem('p2p_roles');
+    localStorage.removeItem('p2p_nodeIndex');
   }
 
   public isAuthenticated(): boolean {
@@ -115,8 +115,16 @@ export class AuthService {
     return new Date().getTime() < expiresAt;
   }
 
+  public getRoles(): string {
+    return localStorage['p2p_roles']; 
+  }
+
   public getUser(): string {
     return localStorage['p2p_user']; 
+  }
+
+  public getNode(): string {
+    return localStorage['p2p_nodeIndex']; 
   }
 
   public getToken(): string {

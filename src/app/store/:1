@@ -1,0 +1,183 @@
+import { Injectable } from '@angular/core';
+import { PO } from '../store/po.model';
+import * as Web3 from 'web3';
+
+
+declare let require: any;
+declare let window: any;
+
+let p2pAbi = require('../contracts/P2PContract.json');
+
+@Injectable()
+export class P2pCollabService {
+
+  _web3: any;
+  private _tokenContract: any;
+  private _tokenContractAddress: string = "0xc43a77a5439dd8f5b1fa9dabd2f5fc71bbeed51f"; // P2P contract orders 29 May
+  private _orderEvent: any;
+
+  constructor() {
+    this._web3 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:8080"));
+    if(!this._web3.isConnected()) {
+        alert("** ALERT ** cannot connect to node via web3js !");
+        } else {
+        console.log("web3 version " + this._web3.version.api + " " + this._web3.version.node);
+    }
+
+  this._tokenContract = this._web3.eth.contract(p2pAbi).at(this._tokenContractAddress);
+  console.log("P2P contratct status =  " + this._tokenContract.health());
+
+  this._orderEvent = this._tokenContract.OrderSent({}, {fromBlock: 0, toBlock: 'latest'}); 
+
+  this._orderEvent.watch(function(error, result){
+    if(!error) {
+        // do what you want to do with the event data
+        console.log("RESULT: Goods = " + result.args.goods + " Quantity = " + result.args.quantity + " Num Order = " + result.args.orderno) 
+     }
+
+   });
+
+   //this._orderEvent.stopWatching();
+  //console.log("orderseq = " + this._tokenContract.getOrderseq());
+  //console.log("Order (4)" + this._tokenContract.queryOrder(4));
+
+  // test loadp2pPOs
+  //this.loadp2pPOs();
+
+  }
+
+
+//---------------
+public getPOs(callback){
+
+var _table : PO[] = [{poID:"TheID",poLine:"010",poSL:"1",poType:"CALL-UP",material:"FR_V5791536020000",status:"OPEN",reqQty:5,reqDate:"11/02/2015",poDocType:"CALL-UP"}, {poID:"TheID",poLine:"010",poSL:"2",poType:"CALL-UP",material:"FR_V5791536020000",status:"OPEN",reqQty:3,reqDate:"15/03/2015",poDocType:"CALL-UP"},{poID:"TheID",poLine:"010",poSL:"3",poType:"CALL-UP",material:"FR_V5791536020000",status:"OPEN",reqQty:4,reqDate:"11/04/2015",poDocType:"CALL-UP"},{poID:"TheID",poLine:"010",poSL:"3",poType:"CALL-UP",material:"FR_V5791536020000",status:"OPEN",reqQty:4,reqDate:"11/04/2015",poDocType:"CALL-UP"},{poID:"TheID",poLine:"010",poSL:"1",poType:"CALL-UP",material:"FR_V5791536020000",status:"OPEN",reqQty:5,reqDate:"11/02/2015",poDocType:"CALL-UP"}, {poID:"TheID",poLine:"010",poSL:"2",poType:"CALL-UP",material:"FR_V5791536020000",status:"OPEN",reqQty:3,reqDate:"15/03/2015",poDocType:"CALL-UP"},{poID:"TheID",poLine:"010",poSL:"3",poType:"CALL-UP",material:"FR_V5791536020000",status:"OPEN",reqQty:4,reqDate:"11/04/2015",poDocType:"CALL-UP"},{poID:"TheID",poLine:"010",poSL:"3",poType:"CALL-UP",material:"FR_V5791536020000",status:"OPEN",reqQty:4,reqDate:"11/04/2015",poDocType:"CALL-UP"},{poID:"TheID",poLine:"010",poSL:"3",poType:"CALL-UP",material:"FR_V5791536020000",status:"OPEN",reqQty:4,reqDate:"11/04/2015",poDocType:"CALL-UP"}];
+
+   // here the code
+ var result : any;
+ result = this._tokenContract.queryOrder(1);
+ // ** if Bytes32 ** console.log("Order[1]xml = " + this._web3.toAscii(result[2]));
+
+/***
+var decodedString = atob(result[2]);
+console.log("gzip xml order =" + decodedString );
+***/
+/** tryout to gunzip => does not work
+var zlib = require('zlib');
+var inflated = zlib.inflateSync(new Buffer(decodedString , 'base64')).toString();
+console.log(inflated);
+var inflated = zlib.inflateSync(decodedString);
+console.log(inflated);
+**/
+
+var nbPO = this._tokenContract.getOrderseq();
+console.log("Nb Orders  = " + nbPO);
+
+for (var _i = 1; _i <= nbPO; _i++) {
+
+var result : any;
+result = this._tokenContract.queryOrder(_i);
+
+//var xml = this._web3.toAscii(result[2]);
+var xml = result[2];
+var fastXmlParser = require('fast-xml-parser');
+var xmlOrder = fastXmlParser.parse(xml);
+console.log(" _i = " + _i);
+console.log("IDOC (" + _i + ") = " + xmlOrder['ZORDERS05']['IDOC']['EDI_DC40']['DOCNUM']);
+_table[_i-1].poID    = xmlOrder['ZORDERS05']['IDOC']['EDI_DC40']['DOCNUM'];
+if (result[3] == 10){
+  _table[_i-1].status  = "NEW ORDER PUB.";
+}
+else{
+  _table[_i-1].status  = "OPEN";
+}
+/**
+if (xmlOrder['ZORDERS05']['IDOC']['EDI_DC40']['STATUS'] == "10"){
+  _table[_i-1].status  = "NEW ORDER PUB.";
+}
+else{
+  _table[_i-1].status  = "OPEN";
+}
+**/
+//_table[_i-1].status  = xmlOrder['ZORDERS05']['IDOC']['EDI_DC40']['STATUS'];
+_table[_i-1].poType  = xmlOrder['ZORDERS05']['IDOC']['E1EDK01']['Z1ZAIREDK01']['ORDER_TYPE'];
+_table[_i-1].poSL    = xmlOrder['ZORDERS05']['IDOC']['E1EDP01']['POSEX']; // to be checked if POSEX is the schedule line or the PO line
+_table[_i-1].reqDate = xmlOrder['ZORDERS05']['IDOC']['E1EDP01']['Z1ZAIREDP20']['EINDT']; // to be checked requested date
+}
+   // callback
+   callback(_table);
+}
+
+//-----------------------------
+// Supplier Accept PO
+//-----------------------------
+public supplierAcceptPO(id: string) { 
+
+    this._web3.personal.unlockAccount("0xed9d02e382b34818e88b88a309c7fe71e65f419d", "", 300); // for test purpose account is on node 1 while it should be node 2
+    this._tokenContract.acceptOrder(id,id,{gas : 10000000, from : "0xed9d02e382b34818e88b88a309c7fe71e65f419d"}); 
+
+  // Watch the event
+  this._orderEvent = this._tokenContract.OrderSent({}, {fromBlock: 0, toBlock: 'latest'});
+  this._orderEvent.watch(function(error, result){
+    if(!error) {
+        // do what you want to do with the event data
+	
+        console.log("RESULT: PO id = " + result.args.po_id + " Num Order = " + result.args.orderno)
+     }
+   });
+
+    //this.store.dispatch( { type: MessageActionTypes.UPDATE, payload: 'waiting blockchain...' } );
+/**
+    const body =
+       { "$class": "org.acme.sample.SupplierAccept", "po": `${id}` }
+       //"transactionId": "",
+       //"timestamp": ""
+    var res ;
+**/
+    console.log("Accept Button Clicked !! id = " + id);
+
+/**
+    this.http.post(BASE_URL + 'org.acme.sample.SupplierAccept', body, HEADER)
+           .map( res => res.json() )
+           .subscribe( pos => {  
+                                if (pos.status == 200) { 
+                                    this.store.dispatch( { type: POActionTypes.PO_UPDATE, payload: { poID: id, status: 'OPEN' } } );
+                                    this.store.dispatch( { type: MessageActionTypes.UPDATE, payload: "OK with transaction: " + pos.body.transactionId } );
+                                }
+                                else this.store.dispatch( { type: MessageActionTypes.UPDATE, payload: pos.body.error.message } );
+                                } );
+**/
+   
+}
+
+//---------------
+//public loadp2pPOs() :Promise<string[]> {
+public loadp2pPOs()  {
+	var _tContract : any;
+	_tContract = this._tokenContract;
+
+		var _table : string[] = [];
+		var _count = 0;
+
+                _tContract.getOrderseq(function(result, error) {
+                   for (var _i = 1; _i <= result; _i++) {
+                        _tContract.queryOrder(_i).then( s_result => { _table[_i] = s_result; _count++;console.log("loadp2pPOs : " + 
+_table[_i]); });
+                   }
+                   while(_count < result ){};
+                  }
+                );
+
+/************
+		_tContract.getOrderseq().then( nborders => {
+		   for (var _i = 1; _i <= nborders; _i++) {
+			_tContract.queryOrder(_i).then( s_result => { _table[_i] = s_result; _count++;console.log("loadp2pPOs : " + _table[_i]); });
+		   }	
+		   while(_count < nborders ){}; 
+		  }	
+		  
+		);
+**********/
+           
+}
+
+}

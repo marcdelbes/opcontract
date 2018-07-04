@@ -10,8 +10,8 @@ import {SuiModule} from 'ng2-semantic-ui';
 import { AppComponent } from './app.component';
 
 import { StoreModule }        from '@ngrx/store';
-import { poService, reducer } from './store/po.service';
 import { nodeService }        from './store/node.service';
+import { OPContractService }   from './store/opcontract.service';
 import { AuthService }        from './auth.service';
 
 import { APP_INITIALIZER } from '@angular/core';
@@ -34,12 +34,11 @@ export function initializeApp(appConfig: AppConfig) {
     FormsModule,
     HttpModule,
     HttpClientModule,
-    SuiModule,
-    StoreModule.forRoot(reducer)
+    SuiModule
   ],
   providers: [
-	poService,
 	nodeService,
+	OPContractService,
    	AuthService,
 	{
       	  provide: HTTP_INTERCEPTORS,

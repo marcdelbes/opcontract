@@ -22,14 +22,27 @@ var superkey = 'e6181caaffff94a09d7e332fc8da9884d99902c7874eb74354bdcadf411929f1
 // connect to a specific geth node via web3
 //
 var Web3 = require('web3');
-var web3;
+var web3_node1, web3_node2;
 
-if (typeof web3 !== 'undefined') { web3 = new Web3(web3.currentProvider); } 
-else { web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:22000")); }
+var NODE_PORT = [ 22000, 22003 ];
+
+if (typeof web3_node1 !== 'undefined') { web3_node1 = new Web3(web3.currentProvider); } 
+else { web3_node1 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-241-14-11.eu-west-1.compute.amazonaws.com:" + NODE_PORT[0])); }
+
+if (typeof web3_node2 !== 'undefined') { web3_node2 = new Web3(web3.currentProvider); } 
+else { web3_node2 = new Web3(new Web3.providers.HttpProvider("http://ec2-34-241-14-11.eu-west-1.compute.amazonaws.com:" + NODE_PORT[1])); }
 
 console.log("config file for " + config.env.name );
-console.log("using login contract at address: " + config.contracts.loginContractAddr );
-console.log("web3 version = " + web3.version.api + " " + web3.version.node );
+console.log("NODE 1 on port " +  NODE_PORT[0]);
+console.log("using login contract at address: " + config.contracts.loginContractAddrNode1 );
+console.log("web3 version = " + web3_node1.version.api + " " + web3_node1.version.node );
+console.log("NODE 2 on port " +  NODE_PORT[1]);
+console.log("using login contract at address: " + config.contracts.loginContractAddrNode2 );
+console.log("web3 version = " + web3_node2.version.api + " " + web3_node2.version.node );
+
+// retrieve contract
+let contract_node1 = web3_node1.eth.contract(loginContractAbi).at(config.contracts.loginContractAddrNode1);
+let contract_node2 = web3_node2.eth.contract(loginContractAbi).at(config.contracts.loginContractAddrNode2);
 
 //
 // Serve all Angular build directory directly as static
@@ -41,7 +54,8 @@ app.use(express.static(distDir));
 //
 // Initialize the app
 //
-var server = app.listen(process.env.PORT || 4200, function () {
+//var server = app.listen(process.env.PORT || 4200, function () {
+var server = app.listen(process.env.PORT || 8080, function () {
     var port = server.address().port;
     console.log("App now running on port", port);
   });
@@ -83,18 +97,41 @@ app.post("/api/challenge", function(req,res) {
     let challenge = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     console.log("Setting challenge phrase to : '" + challenge + "'");
 
-    // retrieve contract
-    let contract = web3.eth.contract(loginContractAbi).at(config.contracts.loginContractAddr);
 
     // check if user or email exists
     //for (i=0;i<web3.eth.accounts.length;i++) if (web3.eth.accounts[ i ]== user) found = true;
-    var addr = contract.getAccount(user);
-    console.log("following address was returned for this user:" + addr ); 
-    if (addr == "0x0000000000000000000000000000000000000000") { 
+    var found = 0;
+    var contract, web3, port, contractAddr;
+
+    var addr = contract_node1.getAccount(user);
+    console.log("node 1: following address was returned for this user:" + addr ); 
+    if (addr != "0x0000000000000000000000000000000000000000") { 
+	contract = contract_node1;
+	found = 1;
+	port = NODE_PORT[0];
+	web3 = web3_node1;
+	contractAddr = config.contracts.loginContractAddrNode1;
+	console.log("Found the user on Node 1");
+    } else { 
+    	addr = contract_node2.getAccount(user);
+    	console.log("node 2: following address was returned for this user:" + addr ); 
+    	if (addr != "0x0000000000000000000000000000000000000000") { 
+		contract = contract_node2;
+		found = 2;
+		port = NODE_PORT[1];
+		web3 = web3_node2;
+		contractAddr = config.contracts.loginContractAddrNode2;
+		console.log("Found the user on Node 2");
+    	}
+    }
+
+    if (found == 0) { 
       res.status(403).send({ auth: false, error: "Sorry, invalid account or email..."});
       return;
     }
 
+    // From here, addr, contractAddr, web3 and contract are set properly
+    
     // store this challenge using the superuser account
     // here we use a signed tx instead of doing an unsecure call:
     //    web3.personal.unlockAccount(user,"",1);
@@ -105,7 +142,7 @@ app.post("/api/challenge", function(req,res) {
          from : superuser,
          gas: 1000000,
          value: 0,
-         to: config.contracts.loginContractAddr,
+         to: contractAddr,
          nonce: web3.eth.getTransactionCount(superuser),
         }
 
@@ -123,13 +160,19 @@ app.post("/api/challenge", function(req,res) {
          from : addr,
          gas: 1000000,
          value: 0,
-         to: config.contracts.loginContractAddr,
+         to: contractAddr,
          nonce: web3.eth.getTransactionCount(addr),
         }
 
-    console.log("Responding with the following tx: " + JSON.stringify(rawTx));
 
-    res.send(JSON.stringify( rawTx ));
+    var fullResponse = { 
+	"nodeIndex": NODE_PORT[ found - 1 ],
+	"rawTx": rawTx
+        }
+
+    console.log("Responding with : " + JSON.stringify(fullResponse));
+
+    res.send(JSON.stringify( fullResponse ));
 
   }
 );
@@ -157,18 +200,32 @@ app.get("/api/testToken", function(req,res) {
 });
 
  
-// POST /api/login/:user	forward to the BC a signed raw transaction as authentication method for the given user
+// POST /api/login/:user/:node	forward to the BC a signed raw transaction as authentication method for the given user
 //				then check for the transaction to be properly mined, and check the challenge
 //				if OK, return a JWT token
-app.post("/api/login/:user", function(req,res) {
+app.post("/api/login/:user/:node", function(req,res) {
 
     let user = req.params.user;
+    let node = req.params.node;
 
     var serializedTx = req.body;
     console.log("received signed transaction for user " + user + " : " + JSON.stringify(serializedTx) );
     console.log("Forwarding it to the BC. keep calm.");
 
-    web3.eth.sendRawTransaction(serializedTx.signedTx, function(error, result) {
+   // select the right node based on parameter... probably should do some check before !
+   var web3, contract;
+   if (NODE_PORT[0] == node) { 
+	web3 = web3_node1;
+   	contract = web3_node1.eth.contract(loginContractAbi).at(config.contracts.loginContractAddrNode1);
+   } else if (NODE_PORT[1] == node) {
+	web3 = web3_node2;
+   	contract = web3_node2.eth.contract(loginContractAbi).at(config.contracts.loginContractAddrNode2); 
+   } else {
+	res.status(403).send({ auth: false, error: "Invalid node. Are you sure you got this value here ?"});
+	return;
+   }
+
+   web3.eth.sendRawTransaction(serializedTx.signedTx, function(error, result) {
                                 if(!error) {
                                     console.log("tx hash = " + result);
 				    let found = false;
@@ -188,7 +245,6 @@ app.post("/api/login/:user", function(req,res) {
 						res.status(403).send({ auth: false, error: "Connection refused. Transaction not mined."});
                                 	} else  {
 						// check that the challenge and attempt values are the same
-    						let contract = web3.eth.contract(loginContractAbi).at(config.contracts.loginContractAddr);
 						if (contract.isMatching( user )) {
 							console.log("Challenge & attempt are identical. OK to generate JWT token");
                                 			// create a token, send it back
@@ -200,8 +256,14 @@ app.post("/api/login/:user", function(req,res) {
                 					//	expiresIn: 120,
                 					//	subject: user
             						//});
+
+							// retrieve the user roles
+							var roles = contract.getRoles( user );
+
 							console.log("token: " + token );
-							res.status(200).send({ auth: true, idToken: token, expiresIn: 120, user: user });
+							console.log("user roles: " + roles );
+
+							res.status(200).send({ auth: true, idToken: token, expiresIn: 3600, user: user, roles: roles });
 						} else {
 							console.log("KO: Challenge & attempt are different ! ");
 							res.status(403).send({ auth: false, error: "Connection refused. Wrong challenge."});

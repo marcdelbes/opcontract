@@ -27,18 +27,28 @@ export class nodeService {
   }
 
   // This function is called when authentication is done, and must be called prior to any access to Web3.js
-  public init() {
+  public init() : Promise<string> {
 
-    // prepare appropriate HTTP header with authorization token
+    // prepare appropriate HTTP header with authorization token and node port
     var headers = {
-  	"Authorization":  "Bearer " + this.authService.getToken()
+  	"Authorization":  "Bearer " + this.authService.getToken(),
+  	"x-quorum-port":  this.authService.getNode(),
 	};
 
-    var provider = new HttpHeaderProvider('http://ec2-34-243-190-121.eu-west-1.compute.amazonaws.com:8080', headers);
-    this.web3 = new Web3(provider);
-    console.log("connected to node via web3");
-    console.log("claim contract addr: " + this._claimContractAddr);
+    return new Promise<string>( (resolve,reject) => {
+      var provider = new HttpHeaderProvider('http://ec2-34-241-14-11.eu-west-1.compute.amazonaws.com:8080', headers);
+      this.web3 = new Web3(provider);
+      console.log("connected to node " + this.authService.getNode() + " via web3");
+      console.log("claim contract addr: " + this._claimContractAddr);
+      resolve("");
+    });
 
+  }
+
+  // Get web3
+  public getNodeCnx() : any
+  {
+	return this.web3
   }
 
   // Basic test: Send a signed transaction and check that contract method has been executed by writing a new string
